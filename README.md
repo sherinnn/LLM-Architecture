@@ -6,6 +6,11 @@ This project focuses on coding the entire **Transformer block**, the fundamental
 
 The Transformer block is designed to process input sequences (converted into vector embeddings) and output **context vectors** of the same dimensionality. This preservation of dimensionality allows for multiple blocks (12 in gpt2) to be stacked effectively to form a deep neural network.
 
+---
+## Summary Video of the Transformer Architecture
+[![Understanding Transformers](https://img.youtube.com/vi/3QlcY-cV1sY/0.jpg)](https://youtu.be/3QlcY-cV1sY)
+
+
 ### Key Components
 
 The Transformer block integrates five core sub-components:
