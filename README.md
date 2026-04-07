@@ -1,76 +1,174 @@
-# LLM Transformer Block Implementation from Scratch
+# GPT-2 From Scratch (124M) 
 
-This project focuses on coding the entire **Transformer block**, the fundamental building block and "engine" behind large language models like GPT. This implementation is part of a series on building GPT architecture from the ground up, specifically targeting the **gpt2 (124M parameter)** configuration.
+## Overview
 
-## Project Overview
+This project walks through building a **GPT-2 style language model (124M parameters)** completely from scratch and using it to **generate text autoregressively**.
 
-The Transformer block is designed to process input sequences (converted into vector embeddings) and output **context vectors** of the same dimensionality. This preservation of dimensionality allows for multiple blocks (12 in gpt2) to be stacked effectively to form a deep neural network.
+It follows two major stages:
+
+1. **Model Construction** — Implementing the GPT-2 architecture
+2. **Text Generation** — Using the model to predict and generate tokens
 
 ---
-## Summary Video of the Transformer Architecture
+
+## Video Overview
+
+### 1. Understanding Transformers
+
 [![Understanding Transformers](https://img.youtube.com/vi/3QlcY-cV1sY/0.jpg)](https://youtu.be/3QlcY-cV1sY)
 
 
-### Key Components
+### 2. GPT-2 From Scratch 
 
-The Transformer block integrates five core sub-components:
+[![Understanding the GPT 2 Architecture](https://img.youtube.com/vi/4lwlkSbIBEI/0.jpg)](https://youtu.be/4lwlkSbIBEI)
 
-1.  **Layer Normalization:** Applied before the attention and feed-forward layers (Pre-layer Norm) to ensure training stability, prevent exploding/vanishing gradients, and solve internal covariate shift.
-2.  **Masked Multi-Head Attention:** Converts embedding vectors into context vectors by capturing the relationships between different tokens in a sequence.
-3.  **Feed-Forward Neural Network (FFN):** A two-layer network that expands the input dimension by 4x to explore a richer parameter space before compressing it back to the original size.
-4.  **GELU Activation:** A smooth, differentiable variation of ReLU used within the FFN to solve the "dead neuron" problem.
-5.  **Shortcut (Skip) Connections:** Adds the input of a layer back to its output to facilitate stable gradient flow and solve the vanishing gradient problem.
-6.  **Dropout:** Randomly sets a percentage of neurons (10% in this config) to zero during training to prevent overfitting and improve generalization.
+---
 
-## Architecture Configuration
+## Architecture Overview
 
-The implementation follows the **gpt2-small** specifications:
+GPT-2 is a **Transformer-based autoregressive language model**.
 
-*   **Embedding Dimension:** 768
-*   **Context Length:** 1024 tokens
-*   **Attention Heads:** 12
-*   **Transformer Layers:** 12
-*   **Dropout Rate:** 0.1 (10%)
-*   **Vocabulary Size:** 50,257
+### Core Components
 
-## Technical Implementation
+* **Token Embeddings** — Convert token IDs into dense vectors
+* **Positional Embeddings** — Encode sequence order information
+* **Transformer Blocks** (stacked multiple times):
 
-### The TransformerBlock Class
-The core logic resides in the `TransformerBlock` class, which manages the sequential workflow of data through the block.
+  * Multi-Head Self-Attention
+  * Feedforward Neural Network (MLP)
+  * Layer Normalization
+  * Residual Connections
+* **Final Linear Layer (LM Head)** — Projects hidden states to vocabulary logits
 
-**Workflow in the `forward` method:**
-1.  **First Sub-block:** Layer Norm $\rightarrow$ Multi-Head Attention $\rightarrow$ Dropout $\rightarrow$ Shortcut Connection.
-2.  **Second Sub-block:** Layer Norm $\rightarrow$ Feed-Forward Network (with GELU) $\rightarrow$ Dropout $\rightarrow$ Shortcut Connection.
+---
 
-### Dimensionality Preservation
-A critical feature of this implementation is that the input and output tensors maintain the exact same shape (e.g., `[batch_size, num_tokens, 768]`). This one-to-one relationship ensures scalability across the entire GPT architecture.
+## Forward Pass Flow
 
-## Usage Example
-
-To initialize a block and process a sample input tensor:
-
-```python
-# Configuration for gpt2-124M
-cfg = {
-    "emb_dim": 768,
-    "context_length": 1024,
-    "n_heads": 12,
-    "drop_rate": 0.1,
-    "qkv_bias": False
-}
-
-# Initialize the block
-block = TransformerBlock(cfg)
-
-# Sample input: 2 batches, 4 tokens each, 768 dimensions
-x = torch.randn(2, 4, 768)
-
-# Process through the Transformer block
-output = block(x)
-
-print(output.shape) # Expected: torch.Size()
+```text
+Input Tokens
+   ↓
+Token Embeddings + Positional Embeddings
+   ↓
+Transformer Block × N
+   ↓
+LayerNorm
+   ↓
+Linear Projection (Logits)
+   ↓
+Softmax → Probabilities
 ```
 
+---
 
-## Future Development
-While the Transformer block is the heart of the engine, the next stage involves integrating this into the full **GPT Model**, including tokenization, positional embeddings, and post-processing steps for next-word prediction.
+## Model Configuration (124M GPT-2)
+
+Typical configuration includes:
+
+* Layers: 12
+* Heads: 12
+* Embedding size: 768
+* Context length: 1024
+* Parameters: ~124 million
+
+---
+
+## Transformer Block Details
+
+Each transformer block contains:
+
+### 1. Multi-Head Self-Attention
+
+* Computes relationships between tokens
+* Uses queries, keys, and values
+* Applies causal masking (no future tokens)
+
+### 2. Feedforward Network (MLP)
+
+* Expands hidden dimension (usually 4×)
+* Applies non-linear activation (e.g., GELU)
+
+### 3. Residual Connections
+
+* Helps stabilize training
+* Allows gradient flow across layers
+
+### 4. Layer Normalization
+
+* Applied before or after sublayers
+* Keeps activations stable
+
+---
+
+## Autoregressive Text Generation
+
+After building the model, text generation works as follows:
+
+### Step-by-Step Process
+
+1. Start with an initial prompt
+2. Feed tokens into the model
+3. Get logits for next token
+4. Convert logits → probabilities
+5. Sample or select next token
+6. Append token to sequence
+7. Repeat
+
+---
+
+## Generation Loop (Pseudo Code)
+
+```python
+for _ in range(max_new_tokens):
+    logits = model(input_tokens)
+    next_token_logits = logits[:, -1, :]
+    probs = softmax(next_token_logits)
+    next_token = sample(probs)
+    input_tokens = concat(input_tokens, next_token)
+```
+
+---
+
+## Sampling Strategies
+
+Different methods affect output quality:
+
+* **Greedy** — Always pick highest probability (deterministic)
+* **Sampling** — Randomly sample from distribution
+* **Top-k Sampling** — Choose from top k tokens
+* **Top-p (Nucleus)** — Choose from smallest set of tokens with cumulative probability p
+
+---
+
+## Key Concepts
+
+### Autoregression
+
+The model predicts one token at a time based on previous tokens.
+
+### Causal Masking
+
+Prevents tokens from attending to future positions.
+
+### Logits vs Probabilities
+
+* Logits = raw outputs
+* Probabilities = softmax(logits)
+
+---
+
+## What You Achieve
+
+By the end of this project, you will:
+
+* Build a full GPT-2 architecture from scratch
+* Understand how transformers process sequences
+* Implement token-by-token text generation
+* Connect theory to working code
+
+---
+
+## Note
+
+* This implementation focuses on **understanding**, not optimization
+* Training is not covered in detail here
+
