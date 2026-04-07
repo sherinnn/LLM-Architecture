@@ -156,16 +156,6 @@ Prevents tokens from attending to future positions.
 
 ---
 
-## What You Achieve
-
-By the end of this project, you will:
-
-* Build a full GPT-2 architecture from scratch
-* Understand how transformers process sequences
-* Implement token-by-token text generation
-* Connect theory to working code
-
----
 
 ## Note
 
